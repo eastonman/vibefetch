@@ -6,6 +6,14 @@ from .models import AggStats
 from .utils import format_cost, format_int
 
 
+def format_cache_hit_rate(
+    input_tokens: int, cache_hit_tokens: int, cache_hit_missing: bool
+) -> str:
+    if cache_hit_missing or input_tokens <= 0:
+        return "N/A"
+    return f"{(cache_hit_tokens / input_tokens) * 100:.2f}%"
+
+
 def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> str:
     headers = [
         "date" if daily else "period",
@@ -14,6 +22,7 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
         "output_tokens",
         "cache_refill_tokens",
         "cache_hit_tokens",
+        "kv_cache_hit_rate",
         "total_tokens",
         "cost_usd",
     ]
@@ -26,6 +35,9 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
         cache_hit = (
             "N/A" if stats.cache_hit_missing else format_int(stats.cache_hit_tokens)
         )
+        cache_hit_rate = format_cache_hit_rate(
+            stats.input_tokens, stats.cache_hit_tokens, stats.cache_hit_missing
+        )
         rows.append(
             [
                 date_key,
@@ -34,6 +46,7 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
                 format_int(stats.output_tokens),
                 cache_refill,
                 cache_hit,
+                cache_hit_rate,
                 format_int(stats.total_tokens),
                 format_cost(stats.cost_usd),
             ]
@@ -59,6 +72,11 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
         "N/A"
         if total_stats.cache_hit_missing
         else format_int(total_stats.cache_hit_tokens),
+        format_cache_hit_rate(
+            total_stats.input_tokens,
+            total_stats.cache_hit_tokens,
+            total_stats.cache_hit_missing,
+        ),
         format_int(total_stats.total_tokens),
         format_cost(total_stats.cost_usd),
     ]
@@ -66,7 +84,7 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
     for row in rows + [total_row]:
         for idx, cell in enumerate(row):
             widths[idx] = max(widths[idx], len(cell))
-    align_right = {2, 3, 4, 5, 6, 7}
+    align_right = {2, 3, 4, 5, 6, 7, 8}
     lines = []
     header_line = "  ".join(
         headers[i].rjust(widths[i]) if i in align_right else headers[i].ljust(widths[i])

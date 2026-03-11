@@ -92,6 +92,7 @@ The table reports, per model:
 - `output_tokens`
 - `cache_refill_tokens`
 - `cache_hit_tokens`
+- `kv_cache_hit_rate`
 - `total_tokens`
 - `cost_usd`
 
@@ -102,6 +103,7 @@ A TOTAL row is shown at the bottom for the selected time span.
 - `input_tokens` is total input (cached + uncached).
 - `cache_refill_tokens` is uncached input (KV cache refill).
 - `cache_hit_tokens` is cached input.
+- `kv_cache_hit_rate` is `cache_hit_tokens / input_tokens`.
 - For Codex/Gemini logs, `cache_refill_tokens` is derived as `input_tokens - cache_hit_tokens`.
 - Cache token fields are shown as `N/A` if not present in logs.
 - Models missing from the LiteLLM pricing table are reported with $0 cost.
