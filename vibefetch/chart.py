@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import math
 import sys
 from typing import Dict, Iterable, List, Tuple, Optional
 
@@ -45,9 +46,9 @@ def render_chart(
         all_buckets.append(current)
         current += step
     if mode == "hourly":
-        bucket_labels = [bucket.strftime("%Y-%m-%d %H:00") for bucket in all_buckets]
+        bucket_labels = [bucket.strftime("%m-%d %H") for bucket in all_buckets]
     else:
-        bucket_labels = [bucket.strftime("%Y-%m-%d") for bucket in all_buckets]
+        bucket_labels = [bucket.strftime("%m-%d") for bucket in all_buckets]
 
     model_totals: Dict[str, int] = {}
     for (_, model), tokens in buckets.items():
@@ -129,6 +130,30 @@ def render_chart(
         stacked_values,
         color=[color_map[model] for model in models],
     )
-    plt.xticks(x_positions, bucket_labels)
+    if bucket_labels:
+        if term_width:
+            label_len = max(len(label) for label in bucket_labels)
+            max_labels = max(2, term_width // max(1, label_len + 2))
+        else:
+            max_labels = 6
+        if len(bucket_labels) <= max_labels:
+            tick_positions = x_positions
+            tick_labels = bucket_labels
+        else:
+            count = max(2, max_labels)
+            n = len(bucket_labels)
+            idxs = [round(i * (n - 1) / (count - 1)) for i in range(count)]
+            seen = set()
+            idxs_unique = []
+            for idx in idxs:
+                if idx in seen:
+                    continue
+                seen.add(idx)
+                idxs_unique.append(idx)
+            if idxs_unique[-1] != n - 1:
+                idxs_unique.append(n - 1)
+            tick_positions = [x_positions[i] for i in idxs_unique]
+            tick_labels = [bucket_labels[i] for i in idxs_unique]
+        plt.xticks(tick_positions, tick_labels)
     print("\n".join(legend_lines))
     plt.show()
