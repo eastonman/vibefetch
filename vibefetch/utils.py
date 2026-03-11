@@ -60,7 +60,7 @@ def format_int(value: int) -> str:
 
 
 def format_cost(value: float) -> str:
-    return f"{value:,.6f}"
+    return f"{value:,.3f}$"
 
 
 def parse_date(text: Optional[str]) -> Optional[dt.date]:
