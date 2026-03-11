@@ -18,6 +18,7 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
     headers = [
         "date" if daily else "period",
         "model",
+        "api_calls",
         "input_tokens",
         "output_tokens",
         "cache_refill_tokens",
@@ -44,6 +45,7 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
             [
                 date_key,
                 model,
+                format_int(stats.api_calls),
                 format_int(stats.input_tokens),
                 format_int(stats.output_tokens),
                 cache_refill,
@@ -53,6 +55,7 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
                 format_cost(stats.cost_usd),
             ]
         )
+        total_stats.api_calls += stats.api_calls
         total_stats.input_tokens += stats.input_tokens
         total_stats.output_tokens += stats.output_tokens
         total_stats.cache_refill_tokens += stats.cache_refill_tokens
@@ -68,6 +71,7 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
     total_row = [
         "TOTAL",
         "ALL",
+        format_int(total_stats.api_calls),
         format_int(total_stats.input_tokens),
         format_int(total_stats.output_tokens),
         format_int(total_stats.cache_refill_tokens),
@@ -86,7 +90,7 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
     for row in rows + [total_row]:
         for idx, cell in enumerate(row):
             widths[idx] = max(widths[idx], len(cell))
-    align_right = {2, 3, 4, 5, 6, 7, 8}
+    align_right = {2, 3, 4, 5, 6, 7, 8, 9}
     lines = []
     header_line = "  ".join(
         headers[i].rjust(widths[i]) if i in align_right else headers[i].ljust(widths[i])

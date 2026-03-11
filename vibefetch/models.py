@@ -29,6 +29,7 @@ class Price:
 
 @dataclass
 class AggStats:
+    api_calls: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
     cache_refill_tokens: int = 0

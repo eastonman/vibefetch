@@ -104,6 +104,7 @@ python -m vibefetch.cost_stats --hourly-chart --chart-models gpt-5.4,claude-opus
 
 The table reports, per model:
 
+- `api_calls`
 - `input_tokens`
 - `output_tokens`
 - `cache_refill_tokens`
@@ -116,6 +117,7 @@ A TOTAL row is shown at the bottom for the selected time span.
 
 ## Notes
 
+- `api_calls` counts parsed API call records.
 - `input_tokens` is total input (cached + uncached).
 - `cache_refill_tokens` is uncached input (KV cache refill).
 - `cache_hit_tokens` is cached input.

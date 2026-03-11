@@ -30,6 +30,7 @@ def aggregate_records(
         if stats is None:
             stats = AggStats()
             aggregated[key] = stats
+        stats.api_calls += 1
         stats.input_tokens += record.input_tokens
         stats.output_tokens += record.output_tokens
         if record.cache_refill_tokens is None:
