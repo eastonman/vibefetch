@@ -5,7 +5,8 @@ CLI utility to compute LLM token and cost statistics for local Claude, Codex, an
 ## Requirements
 
 - Python 3.10+
-- `plotext` for charts (already listed in `requirements.txt`)
+- `plotext` for charts
+- `rich` for responsive table rendering
 
 Install dependencies:
 
@@ -116,6 +117,7 @@ The table reports, per model:
 - `cost_usd`
 
 A TOTAL row is shown at the bottom for the selected time span.
+On narrow terminals, less critical columns are hidden automatically to keep the table within the viewport.
 
 ## Notes
 

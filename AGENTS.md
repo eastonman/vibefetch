@@ -9,7 +9,7 @@ This document describes the design principles and project structure for `vibefet
 - **Pure functions where possible**: transformations and computations avoid side effects.
 - **Graceful failure**: missing logs, missing pricing, or partial fields do not crash the CLI.
 - **Human-friendly output**: table totals, readable token counts, and clear chart legends.
-- **Minimal dependencies**: only `plotext` is required for charts; core logic uses stdlib.
+- **Minimal dependencies**: use `plotext` for charts and `rich` for terminal table rendering; keep other logic on stdlib.
 
 ## Project Structure
 
