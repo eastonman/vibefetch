@@ -22,15 +22,17 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
         "output_tokens",
         "cache_refill_tokens",
         "cache_hit_tokens",
-        "kv_cache_hit_rate",
+        "cache_hit_rate",
         "total_tokens",
-        "cost_usd",
+        "cost",
     ]
     rows: List[List[str]] = []
     total_stats = AggStats()
     for (date_key, model), stats in sorted(aggregated.items()):
         cache_refill = (
-            "N/A" if stats.cache_refill_missing else format_int(stats.cache_refill_tokens)
+            "N/A"
+            if stats.cache_refill_missing
+            else format_int(stats.cache_refill_tokens)
         )
         cache_hit = (
             "N/A" if stats.cache_hit_missing else format_int(stats.cache_hit_tokens)
@@ -102,7 +104,9 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
     lines.append("  ".join("-" * widths[i] for i in range(len(headers))))
     lines.append(
         "  ".join(
-            total_row[i].rjust(widths[i]) if i in align_right else total_row[i].ljust(widths[i])
+            total_row[i].rjust(widths[i])
+            if i in align_right
+            else total_row[i].ljust(widths[i])
             for i in range(len(total_row))
         )
     )

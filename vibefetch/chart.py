@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import math
 import sys
-from typing import Dict, Iterable, List, Tuple, Optional
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from .aggregate import record_total_tokens
 from .models import Record
@@ -46,7 +46,7 @@ def render_chart(
         all_buckets.append(current)
         current += step
     if mode == "hourly":
-        bucket_labels = [bucket.strftime("%m-%d %H") for bucket in all_buckets]
+        bucket_labels = [bucket.strftime("%m-%d/%H") for bucket in all_buckets]
     else:
         bucket_labels = [bucket.strftime("%m-%d") for bucket in all_buckets]
 
