@@ -45,3 +45,8 @@ vibefetch/
 - New log sources should add a parser in `logs.py` and return `Record` objects.
 - New output formats should be implemented in a new module and called from `cost_stats.py`.
 - Keep dependencies minimal and prefer stdlib unless charts or formatting require otherwise.
+
+## Commit Convention
+
+- Use Angular/Conventional Commit format for all commits: `type(scope): summary`.
+- Prefer concise lowercase `type` values such as `feat`, `fix`, `docs`, `refactor`, `test`, `chore`.

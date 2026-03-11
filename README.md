@@ -45,6 +45,22 @@ Both charts:
 python -m vibefetch.cost_stats --hourly-chart --daily-chart
 ```
 
+## Chart Backends
+
+Chart rendering is auto-selected:
+
+- `kitty` graphics protocol (high-resolution image chart) when supported by the terminal (for example Ghostty, Kitty, and WezTerm).
+- `plotext` text chart fallback otherwise.
+
+Force a backend if needed:
+
+```bash
+VIBEFETCH_CHART_BACKEND=kitty python -m vibefetch.cost_stats --hourly-chart
+VIBEFETCH_CHART_BACKEND=plotext python -m vibefetch.cost_stats --hourly-chart
+```
+
+In `tmux`, high-resolution kitty rendering is disabled; vibefetch always falls back to `plotext`.
+
 ## Log Sources
 
 By default the tool reads:
