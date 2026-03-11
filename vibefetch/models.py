@@ -15,6 +15,8 @@ class Record:
     cache_refill_tokens: Optional[int]
     cache_hit_tokens: Optional[int]
     total_tokens: Optional[int]
+    billable_input_tokens: int
+    billable_cache_creation_tokens: int = 0
 
 
 @dataclass

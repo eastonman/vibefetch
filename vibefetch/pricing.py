@@ -72,12 +72,11 @@ def normalize_model(model: str, price_index: Dict[str, Price]) -> Optional[str]:
 def cost_for_record(record: Record, price: Optional[Price]) -> float:
     if price is None:
         return 0.0
-    input_cost = record.input_tokens * price.input_cost_per_token
-    output_cost = record.output_tokens * price.output_cost_per_token
-    cache_refill = (
-        0 if record.cache_refill_tokens is None else record.cache_refill_tokens
-    )
     cache_hit = 0 if record.cache_hit_tokens is None else record.cache_hit_tokens
-    cache_refill_cost = cache_refill * price.cache_creation_input_token_cost
+    input_cost = record.billable_input_tokens * price.input_cost_per_token
+    output_cost = record.output_tokens * price.output_cost_per_token
+    cache_refill_cost = (
+        record.billable_cache_creation_tokens * price.cache_creation_input_token_cost
+    )
     cache_hit_cost = cache_hit * price.cache_read_input_token_cost
     return input_cost + output_cost + cache_refill_cost + cache_hit_cost

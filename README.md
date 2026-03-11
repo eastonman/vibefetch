@@ -99,5 +99,9 @@ A TOTAL row is shown at the bottom for the selected time span.
 
 ## Notes
 
+- `input_tokens` is total input (cached + uncached).
+- `cache_refill_tokens` is uncached input (KV cache refill).
+- `cache_hit_tokens` is cached input.
+- For Codex/Gemini logs, `cache_refill_tokens` is derived as `input_tokens - cache_hit_tokens`.
 - Cache token fields are shown as `N/A` if not present in logs.
 - Models missing from the LiteLLM pricing table are reported with $0 cost.

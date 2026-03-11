@@ -65,7 +65,7 @@ def parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     parser.add_argument(
         "--timeout",
         type=float,
-        default=8.0,
+        default=2.0,
         help="Pricing fetch timeout in seconds.",
     )
     return parser.parse_args(argv)

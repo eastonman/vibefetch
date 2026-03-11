@@ -12,8 +12,6 @@ def record_total_tokens(record: Record) -> int:
     return (
         record.input_tokens
         + record.output_tokens
-        + (record.cache_refill_tokens or 0)
-        + (record.cache_hit_tokens or 0)
     )
 
 

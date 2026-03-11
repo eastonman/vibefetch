@@ -55,9 +55,7 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
         "ALL",
         format_int(total_stats.input_tokens),
         format_int(total_stats.output_tokens),
-        "N/A"
-        if total_stats.cache_refill_missing
-        else format_int(total_stats.cache_refill_tokens),
+        format_int(total_stats.cache_refill_tokens),
         "N/A"
         if total_stats.cache_hit_missing
         else format_int(total_stats.cache_hit_tokens),
