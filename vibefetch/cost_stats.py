@@ -99,13 +99,18 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     price_index = build_price_index(pricing_raw)
     aggregated_overall, missing_models, missing_cache = aggregate_records(
-        records, daily=False, price_index=price_index
+        records, daily=False, price_index=price_index, merge_models=False
     )
     aggregated_daily: Optional[Dict[Tuple[str, str], AggStats]] = None
     if args.daily:
-        aggregated_daily, _, _ = aggregate_records(
-            records, daily=True, price_index=price_index
+        aggregated_daily_totals, _, _ = aggregate_records(
+            records, daily=True, price_index=price_index, merge_models=True
         )
+        aggregated_daily_per_model, _, _ = aggregate_records(
+            records, daily=True, price_index=price_index, merge_models=False
+        )
+        aggregated_daily = dict(aggregated_daily_per_model)
+        aggregated_daily.update(aggregated_daily_totals)
 
     print(f"Pricing source: {pricing_source}")
     if missing_models:

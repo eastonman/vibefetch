@@ -27,6 +27,8 @@ Daily table:
 python -m vibefetch.cost_stats --daily
 ```
 
+`--daily` shows per-model rows for each date plus one `ALL` aggregate row per date.
+
 Hourly chart:
 
 ```bash

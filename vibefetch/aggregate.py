@@ -19,13 +19,15 @@ def aggregate_records(
     records: Iterable[Record],
     daily: bool,
     price_index: Dict[str, Price],
+    merge_models: bool = False,
 ) -> Tuple[Dict[Tuple[str, str], AggStats], List[str], bool]:
     aggregated: Dict[Tuple[str, str], AggStats] = {}
     missing_price_models: List[str] = []
     missing_cache = False
     for record in records:
         date_key = record.timestamp.date().isoformat() if daily else "ALL"
-        key = (date_key, record.model)
+        model_key = "ALL" if merge_models else record.model
+        key = (date_key, model_key)
         stats = aggregated.get(key)
         if stats is None:
             stats = AggStats()

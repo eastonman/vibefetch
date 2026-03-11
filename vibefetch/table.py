@@ -29,6 +29,9 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
     ]
     rows: List[List[str]] = []
     total_stats = AggStats()
+    use_daily_all_for_totals = daily and any(
+        model == "ALL" for (_, model) in aggregated.keys()
+    )
     for (date_key, model), stats in sorted(aggregated.items()):
         cache_refill = (
             "N/A"
@@ -55,6 +58,8 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
                 format_cost(stats.cost_usd),
             ]
         )
+        if use_daily_all_for_totals and model != "ALL":
+            continue
         total_stats.api_calls += stats.api_calls
         total_stats.input_tokens += stats.input_tokens
         total_stats.output_tokens += stats.output_tokens
