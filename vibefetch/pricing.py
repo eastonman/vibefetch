@@ -10,6 +10,15 @@ from typing import Dict, Optional, Tuple
 from .models import Price, Record
 
 
+def _safe_float(value: object) -> float:
+    if value in (None, ""):
+        return 0.0
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def load_pricing(
     url: str, timeout: float, cache_path: str
 ) -> Tuple[Dict[str, dict], str]:
@@ -40,23 +49,32 @@ def build_price_index(pricing: Dict[str, dict]) -> Dict[str, Price]:
         if not isinstance(value, dict):
             continue
         index[key] = Price(
-            input_cost_per_token=float(value.get("input_cost_per_token") or 0.0),
-            output_cost_per_token=float(value.get("output_cost_per_token") or 0.0),
-            cache_creation_input_token_cost=float(
-                value.get("cache_creation_input_token_cost") or 0.0
+            input_cost_per_token=_safe_float(value.get("input_cost_per_token")),
+            output_cost_per_token=_safe_float(value.get("output_cost_per_token")),
+            cache_creation_input_token_cost=_safe_float(
+                value.get("cache_creation_input_token_cost")
             ),
-            cache_read_input_token_cost=float(
-                value.get("cache_read_input_token_cost") or 0.0
+            cache_read_input_token_cost=_safe_float(
+                value.get("cache_read_input_token_cost")
             ),
         )
     return index
 
 
-def normalize_model(model: str, price_index: Dict[str, Price]) -> Optional[str]:
+def build_model_lookup(price_index: Dict[str, Price]) -> Dict[str, str]:
+    return {key.lower(): key for key in price_index.keys()}
+
+
+def normalize_model(
+    model: str,
+    price_index: Dict[str, Price],
+    lowered_index: Optional[Dict[str, str]] = None,
+) -> Optional[str]:
     if model in price_index:
         return model
+    if lowered_index is None:
+        lowered_index = build_model_lookup(price_index)
     lowered = model.lower()
-    lowered_index = {k.lower(): k for k in price_index.keys()}
     if lowered in lowered_index:
         return lowered_index[lowered]
     if "/" in model:

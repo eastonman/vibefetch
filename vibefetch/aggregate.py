@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from .models import AggStats, Price, Record
-from .pricing import cost_for_record, normalize_model
+from .pricing import build_model_lookup, cost_for_record, normalize_model
 
 
 def record_total_tokens(record: Record) -> int:
@@ -23,7 +23,9 @@ def aggregate_records(
 ) -> Tuple[Dict[Tuple[str, str], AggStats], List[str], bool]:
     aggregated: Dict[Tuple[str, str], AggStats] = {}
     missing_price_models: List[str] = []
+    missing_price_seen: Set[str] = set()
     missing_cache = False
+    model_lookup = build_model_lookup(price_index)
     for record in records:
         date_key = record.timestamp.date().isoformat() if daily else "ALL"
         model_key = "ALL" if merge_models else record.model
@@ -46,9 +48,10 @@ def aggregate_records(
         else:
             stats.cache_hit_tokens += record.cache_hit_tokens
         stats.total_tokens += record_total_tokens(record)
-        normalized = normalize_model(record.model, price_index)
+        normalized = normalize_model(record.model, price_index, model_lookup)
         price = price_index.get(normalized) if normalized else None
-        if price is None and record.model not in missing_price_models:
+        if price is None and record.model not in missing_price_seen:
+            missing_price_seen.add(record.model)
             missing_price_models.append(record.model)
         stats.cost_usd += cost_for_record(record, price)
     return aggregated, missing_price_models, missing_cache
