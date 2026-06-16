@@ -1,6 +1,6 @@
 # vibefetch
 
-CLI utility to compute LLM token and cost statistics for local Claude, Codex, and Gemini CLI logs. It uses LiteLLM pricing data and can render hourly or daily stacked bar charts in the terminal.
+CLI utility to compute LLM token and cost statistics for local Claude, Codex, Gemini, and OMP CLI logs. It uses LiteLLM pricing data and can render hourly or daily stacked bar charts in the terminal.
 
 ## Requirements
 
@@ -71,11 +71,12 @@ By default the tool reads:
 - Claude: `~/.claude/history.jsonl` and `~/.claude/projects/**/*.jsonl`
 - Codex: `~/.codex/history.jsonl` and `~/.codex/sessions/**/*.jsonl`
 - Gemini: `~/.gemini/tmp/**/chats/session-*.json`
+- OMP: `~/.omp/agent/sessions/**/*.jsonl` and `~/.omp/sessions/**/*.jsonl`
 
 Override roots if needed:
 
 ```bash
-python -m vibefetch.cost_stats --claude-root /path/to/claude --codex-root /path/to/codex --gemini-root /path/to/gemini
+python -m vibefetch.cost_stats --claude-root /path/to/claude --codex-root /path/to/codex --gemini-root /path/to/gemini --omp-root /path/to/omp
 ```
 
 ## Pricing Data
@@ -126,6 +127,8 @@ On narrow terminals, less critical columns are hidden automatically to keep the 
 - `cache_refill_tokens` is uncached input (KV cache refill).
 - `cache_hit_tokens` is cached input.
 - `kv_cache_hit_rate` is `cache_hit_tokens / input_tokens`.
-- For Codex/Gemini logs, `cache_refill_tokens` is derived as `input_tokens - cache_hit_tokens`.
+- For Codex/Gemini logs, `cache_refill_tokens` is derived as uncached input (`input_tokens - cache_hit_tokens`).
+- For OMP logs, `cache_refill_tokens` is uncached input plus `cacheWrite` tokens.
+- OMP provider prefixes such as `veriops/` and `ysyx/` are stripped so those records aggregate with the same base model from other CLI tools.
 - Cache token fields are shown as `N/A` if not present in logs.
 - Models missing from the LiteLLM pricing table are reported with $0 cost.

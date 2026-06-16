@@ -15,6 +15,7 @@ from .logs import (
     parse_claude_records,
     parse_codex_records,
     parse_gemini_records,
+    parse_omp_records,
 )
 from .models import AggStats
 from .pricing import build_price_index, load_pricing
@@ -24,11 +25,12 @@ from .utils import parse_date
 
 def parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Vibe coding cost stats for Claude, Codex, and Gemini logs."
+        description="Vibe coding cost stats for Claude, Codex, Gemini, and OMP logs."
     )
     parser.add_argument("--claude-root", default="~/.claude", help="Claude log root.")
     parser.add_argument("--codex-root", default="~/.codex", help="Codex log root.")
     parser.add_argument("--gemini-root", default="~/.gemini", help="Gemini log root.")
+    parser.add_argument("--omp-root", default="~/.omp", help="OMP log root.")
     parser.add_argument("--from", dest="date_from", help="Start date (YYYY-MM-DD).")
     parser.add_argument("--to", dest="date_to", help="End date (YYYY-MM-DD).")
     parser.add_argument("--daily", action="store_true", help="Group stats per day.")
@@ -83,6 +85,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     records.extend(parse_claude_records(args.claude_root))
     records.extend(parse_codex_records(args.codex_root))
     records.extend(parse_gemini_records(args.gemini_root))
+    records.extend(parse_omp_records(args.omp_root))
 
     records = filter_by_date(records, date_from, date_to)
     if not records:

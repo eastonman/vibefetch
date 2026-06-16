@@ -41,6 +41,22 @@ def discover_gemini_files(root: str) -> List[str]:
     )
 
 
+def discover_omp_files(root: str) -> List[str]:
+    root = os.path.expanduser(root)
+    patterns = (
+        os.path.join(root, "agent", "sessions", "**", "*.jsonl"),
+        os.path.join(root, "sessions", "**", "*.jsonl"),
+    )
+    seen = set()
+    files = []
+    for pattern in patterns:
+        for path in glob.glob(pattern, recursive=True):
+            if path not in seen:
+                seen.add(path)
+                files.append(path)
+    return files
+
+
 def usage_delta(curr: Dict[str, object], prev: Optional[Dict[str, object]]) -> Dict[str, int]:
     if prev is None:
         return {k: safe_int(v) for k, v in curr.items()}
@@ -130,6 +146,45 @@ def _normalize_gemini_usage(
     )
 
 
+def _omp_model_name(message: Dict[str, object]) -> str:
+    return str(message.get("model") or "unknown").rsplit("/", 1)[-1]
+
+
+def _omp_usage_total(usage: Dict[str, object]) -> int:
+    total_tokens = usage.get("totalTokens")
+    if total_tokens is not None:
+        return safe_int(total_tokens)
+    return (
+        safe_int(usage.get("input"))
+        + safe_int(usage.get("output"))
+        + safe_int(usage.get("cacheRead"))
+        + safe_int(usage.get("cacheWrite"))
+    )
+
+
+def _normalize_omp_usage(
+    model: str, timestamp: dt.datetime, usage: Dict[str, object]
+) -> Record:
+    uncached_input = safe_int(usage.get("input"))
+    output = safe_int(usage.get("output"))
+    cache_read = safe_int(usage.get("cacheRead"))
+    cache_write = safe_int(usage.get("cacheWrite"))
+    cache_refill = uncached_input + cache_write
+    total_tokens = usage.get("totalTokens")
+    return Record(
+        provider="omp",
+        model=model,
+        timestamp=timestamp,
+        input_tokens=cache_refill + cache_read,
+        output_tokens=output,
+        cache_refill_tokens=cache_refill,
+        cache_hit_tokens=cache_read,
+        total_tokens=(None if total_tokens is None else safe_int(total_tokens)),
+        billable_input_tokens=uncached_input,
+        billable_cache_creation_tokens=cache_write,
+    )
+
+
 def parse_claude_records(root: str) -> List[Record]:
     records: List[Record] = []
     for path in discover_claude_files(root):
@@ -208,6 +263,31 @@ def parse_gemini_records(root: str) -> List[Record]:
                 continue
             model = message.get("model") or payload.get("model") or "unknown"
             records.append(_normalize_gemini_usage(str(model), timestamp, tokens))
+    return records
+
+
+def parse_omp_records(root: str) -> List[Record]:
+    records: List[Record] = []
+    for path in discover_omp_files(root):
+        for obj in iter_jsonl(path):
+            if obj.get("type") != "message":
+                continue
+            message = obj.get("message")
+            if not isinstance(message, dict):
+                continue
+            if message.get("role") != "assistant":
+                continue
+            usage = message.get("usage")
+            if not isinstance(usage, dict):
+                continue
+            if _omp_usage_total(usage) == 0:
+                continue
+            timestamp = parse_timestamp(obj.get("timestamp") or message.get("timestamp"))
+            if timestamp is None:
+                continue
+            records.append(
+                _normalize_omp_usage(_omp_model_name(message), timestamp, usage)
+            )
     return records
 
 
