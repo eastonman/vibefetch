@@ -2,34 +2,10 @@ from __future__ import annotations
 
 import io
 import shutil
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Tuple
 
 from .models import AggStats
 from .utils import format_cost, format_int
-
-_COLUMN_ORDER = [
-    "period",
-    "model",
-    "api_calls",
-    "input_tokens",
-    "output_tokens",
-    "cache_refill_tokens",
-    "cache_hit_tokens",
-    "cache_hit_rate",
-    "total_tokens",
-    "cost",
-]
-
-_RIGHT_ALIGN = {
-    "api_calls",
-    "input_tokens",
-    "output_tokens",
-    "cache_refill_tokens",
-    "cache_hit_tokens",
-    "cache_hit_rate",
-    "total_tokens",
-    "cost",
-}
 
 
 def format_cache_hit_rate(
@@ -42,7 +18,7 @@ def format_cache_hit_rate(
     return f"{(cache_hit_tokens / input_tokens) * 100:.2f}%"
 
 
-def _column_label(key: str, daily: bool, multiline: bool = True) -> str:
+def _column_label(key: str, daily: bool) -> str:
     if key == "period":
         return "date" if daily else "period"
     labels_single = {
@@ -56,6 +32,17 @@ def _column_label(key: str, daily: bool, multiline: bool = True) -> str:
         "cost": "cost_usd",
     }
     return labels_single.get(key, key)
+
+
+def _format_line(cells: List[str], widths: List[int]) -> str:
+    return "  ".join(
+        cells[i].rjust(widths[i]) if i >= 2 else cells[i].ljust(widths[i])
+        for i in range(len(cells))
+    )
+
+
+def _separator(widths: List[int]) -> str:
+    return "  ".join("-" * width for width in widths)
 
 
 def _row_pair(row: Dict[str, str]) -> Tuple[List[str], List[str]]:
@@ -159,7 +146,11 @@ def _build_table_rows(
         "api_calls": format_int(total_stats.api_calls),
         "input_tokens": format_int(total_stats.input_tokens),
         "output_tokens": format_int(total_stats.output_tokens),
-        "cache_refill_tokens": format_int(total_stats.cache_refill_tokens),
+        "cache_refill_tokens": (
+            "N/A"
+            if total_stats.cache_refill_missing
+            else format_int(total_stats.cache_refill_tokens)
+        ),
         "cache_hit_tokens": (
             "N/A" if total_stats.cache_hit_missing else format_int(total_stats.cache_hit_tokens)
         ),
@@ -177,7 +168,6 @@ def _build_table_rows(
 def _render_table_rich(
     rows: List[Dict[str, str]],
     total_row: Dict[str, str],
-    selected_columns: Sequence[str],
     daily: bool,
     width: int,
 ) -> str:
@@ -195,7 +185,7 @@ def _render_table_rich(
         show_lines=False,
         highlight=False,
     )
-    table.add_column(_column_label("period", daily, multiline=False), no_wrap=True, min_width=10)
+    table.add_column(_column_label("period", daily), no_wrap=True, min_width=10)
     table.add_column("model", no_wrap=True, min_width=12)
     table.add_column("api_calls", justify="right", no_wrap=True, min_width=6)
     table.add_column("input", justify="right", no_wrap=True, min_width=7)
@@ -204,7 +194,7 @@ def _render_table_rich(
     table.add_column("cost", justify="right", no_wrap=True, min_width=6)
 
     header1 = [
-        _column_label("period", daily, multiline=False),
+        _column_label("period", daily),
         "model",
         "api_calls",
         "input",
@@ -247,12 +237,11 @@ def _render_table_rich(
 def _render_table_plain(
     rows: List[Dict[str, str]],
     total_row: Dict[str, str],
-    selected_columns: Sequence[str],
     daily: bool,
     width: int,
 ) -> str:
     headers = [
-        _column_label("period", daily, multiline=False),
+        _column_label("period", daily),
         "model",
         "api_calls",
         "input",
@@ -272,54 +261,24 @@ def _render_table_plain(
             widths[idx] = max(widths[idx], len(cell))
 
     lines: List[str] = []
-    lines.append(
-        "  ".join(
-            headers[i].rjust(widths[i]) if i >= 2 else headers[i].ljust(widths[i])
-            for i in range(len(headers))
-        )
-    )
-    lines.append("  ".join("-" * width for width in widths))
-    lines.append(
-        "  ".join(
-            lines_for_width[1][i].rjust(widths[i]) if i >= 2 else lines_for_width[1][i].ljust(widths[i])
-            for i in range(len(headers))
-        )
-    )
-    lines.append("  ".join("-" * width for width in widths))
+    lines.append(_format_line(headers, widths))
+    lines.append(_separator(widths))
+    lines.append(_format_line(lines_for_width[1], widths))
+    lines.append(_separator(widths))
     for idx, row in enumerate(rows):
         if daily and idx > 0 and row["period"]:
-            lines.append("  ".join("-" * width for width in widths))
+            lines.append(_separator(widths))
         line1, line2 = _row_pair(row)
-        lines.append(
-            "  ".join(
-                line1[i].rjust(widths[i]) if i >= 2 else line1[i].ljust(widths[i])
-                for i in range(len(headers))
-            )
-        )
-        lines.append(
-            "  ".join(
-                line2[i].rjust(widths[i]) if i >= 2 else line2[i].ljust(widths[i])
-                for i in range(len(headers))
-            )
-        )
+        lines.append(_format_line(line1, widths))
+        lines.append(_format_line(line2, widths))
         if idx < len(rows) - 1:
             next_starts_new_day = daily and bool(rows[idx + 1]["period"])
             if not next_starts_new_day:
                 lines.append("  ".join("".ljust(widths[i]) for i in range(len(headers))))
-    lines.append("  ".join("-" * width for width in widths))
+    lines.append(_separator(widths))
     total1, total2 = _row_pair(total_row)
-    lines.append(
-        "  ".join(
-            total1[i].rjust(widths[i]) if i >= 2 else total1[i].ljust(widths[i])
-            for i in range(len(headers))
-        )
-    )
-    lines.append(
-        "  ".join(
-            total2[i].rjust(widths[i]) if i >= 2 else total2[i].ljust(widths[i])
-            for i in range(len(headers))
-        )
-    )
+    lines.append(_format_line(total1, widths))
+    lines.append(_format_line(total2, widths))
     return "\n".join(lines)
 
 
@@ -329,10 +288,9 @@ def render_table(aggregated: Dict[Tuple[str, str], AggStats], daily: bool) -> st
         return "No records found."
 
     width = shutil.get_terminal_size(fallback=(120, 40)).columns
-    selected_columns = list(_COLUMN_ORDER)
     rows, total_row = _apply_table_hints(rows, total_row, daily, width)
 
     try:
-        return _render_table_rich(rows, total_row, selected_columns, daily, width)
+        return _render_table_rich(rows, total_row, daily, width)
     except Exception:  # noqa: BLE001
-        return _render_table_plain(rows, total_row, selected_columns, daily, width)
+        return _render_table_plain(rows, total_row, daily, width)
